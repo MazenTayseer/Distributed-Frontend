@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --main-color: #f1f1f1;
+}
+
+body {
+  background-color: var(--main-color);
+}
+
+.site-padding {
+  @apply lg:px-24 md:px-16 px-6
+}
+
+.bg-main {
+  background-color: var(--main-color);
+}
