@@ -1,5 +1,6 @@
 import "@styles/machines-loader.css";
 import { useState, useEffect } from "react";
+import config from "@config";
 
 type MachineStatusProps = {
   host: string;
@@ -11,7 +12,7 @@ const MachineStatus = ({ host }: MachineStatusProps) => {
   const getStatus = async () => {
     try {
       setstatus("loading");
-      const response = await fetch(`http://40.71.40.201/check_ssh/${host}`);
+      const response = await fetch(`${config.apiUrl}/check_ssh/${host}`);
       if (!response.ok) {
         throw new Error("Failed to fetch data from server");
       }

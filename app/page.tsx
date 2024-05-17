@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import config from "@config";
 
 import "@styles/animation.css";
 import Machines from "@components/Machines";
@@ -11,7 +12,7 @@ const HomePage = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("http://40.71.40.201/ping");
+      const response = await fetch(config.apiUrl + "/ping");
       if (!response.ok) {
         throw new Error("Failed to fetch data from server");
       }
@@ -21,6 +22,8 @@ const HomePage = () => {
       console.log(data.message)
     } catch (err) {}
   };
+
+  // fetchData();
 
   return (
     <>

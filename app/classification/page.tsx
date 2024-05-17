@@ -4,6 +4,7 @@ import AddImageAdvanced from "@components/AddImageAdvanced";
 import { useRef, useState } from "react";
 import axios from "axios";
 import "@styles/loader.css";
+import config from "@config";
 
 interface ImageData {
   image: File;
@@ -56,7 +57,7 @@ const AdvanvedPage = () => {
       });
 
       const response = await axios.post(
-        "http://40.71.40.201/upload",
+        `${config.apiUrl}/upload`,
         formData,
         {
           headers: {
@@ -69,7 +70,7 @@ const AdvanvedPage = () => {
       const finalImages = response.data.images.map(
         async (imageUrl: string, index: number) => {
           // Fetch each image
-          const url = `http://40.71.40.201/results/${imageUrl}`;
+          const url = `${config.apiUrl}/results/${imageUrl}`;
           const imageResponse = await axios.get(url, {
             responseType: "blob", // Ensure binary response
           });
@@ -101,7 +102,7 @@ const AdvanvedPage = () => {
 
       NODES.forEach(async (node) => {
         await axios.delete(
-          `http://40.71.40.201/delete_files_from_nodes/${node}`
+          `${config.apiUrl}/delete_files_from_nodes/${node}`
         );
       });
 
