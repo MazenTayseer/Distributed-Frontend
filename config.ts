@@ -1,5 +1,5 @@
 const config = {
-  apiUrl: "https://distributed-backend.vercel.app",
+  apiUrl: "http://40.71.40.201",
 };
 
 export default config;
