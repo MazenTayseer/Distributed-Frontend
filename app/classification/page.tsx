@@ -16,7 +16,7 @@ interface ProcessedImages {
   operation: string;
 }
 
-const NODES = ["master001", "node001"];
+const NODES = ["master001", "node001", "node002"];
 
 const AdvanvedPage = () => {
   const [imageCount, setImageCount] = useState(1);
