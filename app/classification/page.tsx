@@ -37,13 +37,8 @@ const AdvanvedPage = () => {
     }, 320);
   };
 
-  const addImage = () => {
-    setImageCount((prevCount) => prevCount + 1);
-    if (addImageRef.current) {
-      setTimeout(() => {
-        addImageRef.current!.scrollIntoView({ behavior: "smooth" });
-      }, 0);
-    }
+  const sanitizeFilename = (filename:string) => {
+    return filename.replace(/[^a-zA-Z0-9.-]/g, "");
   };
 
   const handleSubmit = async () => {
@@ -52,7 +47,9 @@ const AdvanvedPage = () => {
       const formData = new FormData();
 
       imagesData.forEach(({ image, operation }) => {
-        formData.append("images", image);
+        const sanitizedFilename = sanitizeFilename(image.name);
+        const sanitizedFile = new File([image], sanitizedFilename, { type: image.type });
+        formData.append("images", sanitizedFile);
         formData.append("operations", operation);
       });
 
