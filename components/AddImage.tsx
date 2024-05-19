@@ -1,6 +1,8 @@
 import "@styles/image-input.css";
 import { motion } from "framer-motion";
 import { useState, ChangeEvent, useEffect } from "react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDownload } from '@fortawesome/free-solid-svg-icons';
 
 interface ProcessedImages {
   image: File;
@@ -34,13 +36,30 @@ const AddImage = ({
 
   useEffect(() => {
     if (imageFile && processedImages.length > 0) {
-      processedImages.forEach((processedImage) => {
-        if (processedImage.image.name === imageFile.name) {
-          setImageAfterSrc(URL.createObjectURL(processedImage.image));
-        }
-      });
+      const sanitizedFilename = sanitizeFilename(imageFile.name);
+      const fileExtension = sanitizedFilename.split('.').pop();
+
+      let matchingProcessedImage;
+
+      for (let i = 0; i < processedImages.length; i++) {
+          const indexedFilename = `${sanitizedFilename.split('.')[0]}_${i}.${fileExtension}`;
+          matchingProcessedImage = processedImages.find(
+              (processedImage) => processedImage.image.name === indexedFilename
+          );
+          if (matchingProcessedImage) {
+              break;
+          }
+      }
+
+      if (matchingProcessedImage) {
+          setImageAfterSrc(URL.createObjectURL(matchingProcessedImage.image));
+      }
     }
   }, [imageFile, processedImages]);
+
+  const sanitizeFilename = (filename: string) => {
+    return filename.replace(/[^a-zA-Z0-9.-]/g, "");
+  };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -94,24 +113,33 @@ const AddImage = ({
         </select>
       </div>
 
-      <div className='flex justify-between items-center w-full gap-6'>
-        <label className='text-center text-xl font-semibold'>
-          Before
+      <div className='flex justify-between items-start w-full gap-6'>
+        <div className='flex flex-col text-center text-xl font-semibold'>
+          <div>Before</div>
           <img
             src={ImageBeforeSrc}
             alt='image'
             className='rounded-lg shadow-lg object-cover w-96 img-before'
           />
-        </label>
+        </div>
 
-        <label className='text-center text-xl font-semibold'>
-          After
+        <div className='flex flex-col text-center text-xl font-semibold'>
+          <div>After</div>
           <img
             src={ImageAfterSrc}
             alt='image'
             className='rounded-lg shadow-lg object-cover w-96 img-after'
           />
-        </label>
+          {ImageAfterSrc !== '/assets/placeholder.png' && (
+            <a
+              href={ImageAfterSrc}
+              download={`processed-image-${index}.png`}
+              className='download-button inline-block mt-2'
+            >
+              <FontAwesomeIcon icon={faDownload} />
+            </a>
+          )}
+        </div>
       </div>
     </motion.div>
   );

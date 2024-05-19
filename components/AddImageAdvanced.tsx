@@ -34,33 +34,44 @@ const AddImageAdvanced = ({
     "/assets/placeholder.png"
   );
 
+
+  
   useEffect(() => {
-    if (imageFile && predictions.hasOwnProperty(imageFile.name)) {
-      processedImages.forEach((processedImage) => {
-        if (processedImage.image.name === imageFile.name) {
-          setImageAfterSrc(URL.createObjectURL(processedImage.image));
-        }
-      });
-
-      const imagePredictions = predictions[imageFile.name];
-      const predsUl = document.querySelector(".predictions");
-
-      while (predsUl?.firstChild) {
-        predsUl.removeChild(predsUl.firstChild);
+    if (imageFile) {
+      const sanitizedFilename = sanitizeFilename(imageFile.name);
+      const matchingProcessedImage = processedImages.find(
+        (processedImage) => processedImage.image.name === sanitizedFilename
+      );
+  
+      if (matchingProcessedImage) {
+        setImageAfterSrc(URL.createObjectURL(matchingProcessedImage.image));
       }
-
-      imagePredictions.forEach((prediction, index) => {
-        const li = document.createElement("li");
-        const confidence = parseFloat(prediction[1]);
-        const confidencePercentage = (confidence * 100).toFixed(0);
-
-        li.innerHTML = `${index + 1}. ${
-          prediction[0]
-        } - ${confidencePercentage}%`;
-        predsUl?.appendChild(li);
-      });
+      
+  
+      if (predictions.hasOwnProperty(sanitizedFilename)) {
+        const imagePredictions = predictions[sanitizedFilename];
+        const predsUl = document.querySelector(".predictions");
+  
+        while (predsUl?.firstChild) {
+          predsUl.removeChild(predsUl.firstChild);
+        }
+  
+        imagePredictions.forEach((prediction, index) => {
+          const li = document.createElement("li");
+          const confidence = parseFloat(prediction[1]);
+          const confidencePercentage = (confidence * 100).toFixed(0);
+  
+          li.innerHTML = `${index + 1}. ${prediction[0]} - ${confidencePercentage}%`;
+          predsUl?.appendChild(li);
+        });
+      }
     }
-  }, [imageFile, processedImages || predictions]);
+  }, [imageFile, processedImages, predictions]);
+
+
+  const sanitizeFilename = (filename: string) => {
+    return filename.replace(/[^a-zA-Z0-9.-]/g, "");
+  };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
