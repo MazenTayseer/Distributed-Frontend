@@ -1,7 +1,7 @@
 "use client";
 
 import AddImage from "@components/AddImage";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import axios from "axios";
 import "@styles/loader.css";
 import config from "@config";
@@ -37,8 +37,24 @@ const BasicPage = () => {
     }, 320);
   };
 
+  const [showImage, setShowImage] = useState(Array(imageCount).fill(true));
+  const [imageOperations, setImageOperations] = useState<string[]>(Array(imageCount).fill("N/A"));
+
+
+  const removeImage = (index: number) => {
+    setImagesData((prevImagesData) => prevImagesData.filter((_, idx) => idx !== index));
+    setShowImage((prevShowImage) => prevShowImage.map((item, idx) => idx === index ? false : item));
+    setImageOperations((prevImageOperations) => prevImageOperations.filter((_, idx) => idx !== index));
+  };
+  
+  
+  
+
+
   const addImage = () => {
     setImageCount((prevCount) => prevCount + 1);
+    setShowImage((prevShowImage) => [...prevShowImage, true]);
+    setProcessedImages([]); // Clear processed images when adding new image
     if (addImageRef.current) {
       setTimeout(() => {
         addImageRef.current!.scrollIntoView({ behavior: "smooth" });
@@ -46,15 +62,34 @@ const BasicPage = () => {
     }
   };
 
+  
+
+
+  
+  const sanitizeFilename = (filename:string) => {
+    return filename.replace(/[^a-zA-Z0-9.-]/g, "");
+  };
+
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
       const formData = new FormData();
-
-      imagesData.forEach(({ image, operation }) => {
-        formData.append("images", image);
+      imagesData.forEach(({ image }, index) => {
+        const operation = imageOperations[index]; // Get current operation for this image
+        const sanitizedFilename = sanitizeFilename(image.name);
+        // Extract file extension
+        const fileExtension = sanitizedFilename.split('.').pop();
+        // Generate unique filename with index
+        const indexedFilename = `${sanitizedFilename.split('.')[0]}_${index}.${fileExtension}`;
+        const sanitizedFile = new File([image], indexedFilename, { type: image.type });
+        formData.append("images", sanitizedFile);
         formData.append("operations", operation);
+      // Print filename and information sent to the server
+      console.log("Sending file to server:", indexedFilename);
+      console.log("Operation:", operation);
       });
+
+
 
       config.apiUrl + "upload";
       const response = await axios.post(`${config.apiUrl}/upload`, formData, {
@@ -84,8 +119,6 @@ const BasicPage = () => {
       const processedImages = await Promise.all(finalImages);
 
       setProcessedImages(processedImages);
-
-      // Do logs here
       const machineLogs = response.data.machine_logs;
       setMachineLogs(machineLogs);
 
@@ -95,20 +128,37 @@ const BasicPage = () => {
       //   );
       // });
 
+      setIsLoading(false);
       NODES.forEach(async (node) => {
         await axios.delete(
           `${config.apiUrl}/delete_files_from_nodes/${node}`
         );
       });
 
-      animateLoaderOut();
+      //animateLoaderOut();
       // setImagesData([]);
       // setProcessedImages([]);
     } catch (error) {
-      animateLoaderOut();
+      //animateLoaderOut();
       console.error("Error uploading images:", error);
     }
+      // Fetch logs after handleSubmit completes
+      //fetchLogs();
   };
+
+//   const fetchLogs = async () => {
+//   try {
+//     const response = await axios.get(`${config.apiUrl}/logs`);
+//     setMachineLogs(response.data.logs);
+//   } catch (error) {
+//     console.error('Error fetching logs:', error);
+//   }
+// };
+
+// useEffect(() => {
+//   // Fetch logs immediately when the component mounts
+//   fetchLogs();
+// }, []);
 
   const handleImageUpload = (data: ImageData, index: number) => {
     setImagesData((prevImagesData) => {
@@ -123,16 +173,17 @@ const BasicPage = () => {
         return [...prevImagesData, data];
       }
     });
+  
+    setImageOperations((prevImageOperations) => {
+      const updatedOperations = [...prevImageOperations];
+      updatedOperations[index] = data.operation;
+      return updatedOperations;
+    });
   };
+  
 
   return (
     <>
-      {isLoading && (
-        <div className='loader-container animate-in'>
-          <div className='loader'></div>
-        </div>
-      )}
-
       <section className='site-padding py-20'>
         <div className='container flex gap-4'>
           <div className=' w-9/12'>
@@ -140,12 +191,23 @@ const BasicPage = () => {
 
             <div onSubmit={handleSubmit}>
               {[...Array(imageCount)].map((_, index) => (
+                showImage[index] && (
+                <div key={index} className='image-upload-container'>
                 <AddImage
-                  key={index}
                   index={index}
-                  onImageUpload={handleImageUpload}
+                  onImageUpload={(data) => handleImageUpload(data, index)}
                   processedImages={processedImages}
                 />
+                <button
+                  type='button'
+                  onClick={() => removeImage(index)}
+                  className='text-red-500 font-semibold'
+                   disabled = {isLoading}
+                >
+                  Remove Image
+                </button>
+              </div>
+              )
               ))}
               <div ref={addImageRef}></div>
 
@@ -153,6 +215,7 @@ const BasicPage = () => {
                 <button
                   type='button'
                   onClick={addImage}
+                  disabled = {isLoading}
                   className='text-black font-semibold bg-white rounded-lg shadow-lg p-3 w-full'
                 >
                   Add Image
@@ -161,6 +224,7 @@ const BasicPage = () => {
                   onClick={handleSubmit}
                   type='button'
                   className='text-white font-semibold bg-black rounded-lg shadow-lg p-3 w-full'
+                  disabled = {isLoading}
                 >
                   Upload
                 </button>
@@ -172,8 +236,8 @@ const BasicPage = () => {
             <div className='bg-white p-4 rounded-lg shadow-lg mt-6'>
               {machineLogs.length > 0 ? (
                 <ul>
-                  {machineLogs.map((log) => (
-                    <li className=' text-green-500 font-semibold'>{log}</li>
+                  {machineLogs.map((log, idx) => (
+                     <li key={idx} className='text-green-500 font-semibold'>{log}</li>
                   ))}
                 </ul>
               ) : (
