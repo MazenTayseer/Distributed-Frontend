@@ -44,6 +44,12 @@ const AdvanvedPage = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
+      NODES.forEach(async (node) => {
+        await axios.delete(
+          `${config.apiUrl}/delete_files_from_nodes/${node}`
+        );
+      });
+
       const formData = new FormData();
 
       imagesData.forEach(({ image, operation }) => {
