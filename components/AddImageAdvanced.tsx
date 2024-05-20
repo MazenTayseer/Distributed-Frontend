@@ -5,6 +5,7 @@ import { useState, ChangeEvent, useEffect } from "react";
 interface ProcessedImages {
   image: File;
   operation: string;
+  originalIndex: number;
 }
 
 interface AddImageProps {
@@ -35,21 +36,21 @@ const AddImageAdvanced = ({
   );
 
 
-  
   useEffect(() => {
     if (imageFile) {
-      const sanitizedFilename = sanitizeFilename(imageFile.name);
       const matchingProcessedImage = processedImages.find(
-        (processedImage) => processedImage.image.name === sanitizedFilename
+        (processedImage) => processedImage.originalIndex === index
       );
-  
       if (matchingProcessedImage) {
         setImageAfterSrc(URL.createObjectURL(matchingProcessedImage.image));
       }
+      const sanitizedFilename = sanitizeFilename(imageFile.name);
+      const fileExtension = sanitizedFilename.split('.').pop();
+      const indexedFilename = `${sanitizedFilename.split('.')[0]}_${index}.${fileExtension}`;
       
   
-      if (predictions.hasOwnProperty(sanitizedFilename)) {
-        const imagePredictions = predictions[sanitizedFilename];
+      if (predictions.hasOwnProperty(indexedFilename)) {
+        const imagePredictions = predictions[indexedFilename];
         const predsUl = document.querySelector(".predictions");
   
         while (predsUl?.firstChild) {

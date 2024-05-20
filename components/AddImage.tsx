@@ -7,6 +7,7 @@ import { faDownload } from '@fortawesome/free-solid-svg-icons';
 interface ProcessedImages {
   image: File;
   operation: string;
+  originalIndex: number;
 }
 
 interface AddImageProps {
@@ -35,31 +36,16 @@ const AddImage = ({
   );
 
   useEffect(() => {
-    if (imageFile && processedImages.length > 0) {
-      const sanitizedFilename = sanitizeFilename(imageFile.name);
-      const fileExtension = sanitizedFilename.split('.').pop();
-
-      let matchingProcessedImage;
-
-      for (let i = 0; i < processedImages.length; i++) {
-          const indexedFilename = `${sanitizedFilename.split('.')[0]}_${i}.${fileExtension}`;
-          matchingProcessedImage = processedImages.find(
-              (processedImage) => processedImage.image.name === indexedFilename
-          );
-          if (matchingProcessedImage) {
-              break;
-          }
-      }
+    if (imageFile) {
+      const matchingProcessedImage = processedImages.find(
+        (processedImage) => processedImage.originalIndex === index
+      );
 
       if (matchingProcessedImage) {
-          setImageAfterSrc(URL.createObjectURL(matchingProcessedImage.image));
+        setImageAfterSrc(URL.createObjectURL(matchingProcessedImage.image));
       }
     }
-  }, [imageFile, processedImages]);
-
-  const sanitizeFilename = (filename: string) => {
-    return filename.replace(/[^a-zA-Z0-9.-]/g, "");
-  };
+  }, [imageFile, processedImages, index]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
