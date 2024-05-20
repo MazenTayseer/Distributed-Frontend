@@ -45,6 +45,7 @@ const AdvanvedPage = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
+      setMachineLogs([]);
       const formData = new FormData();
       imagesData.forEach(({ image, operation }, index) => {
       const sanitizedFilename = sanitizeFilename(image.name);
