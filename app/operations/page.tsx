@@ -14,9 +14,10 @@ interface ImageData {
 interface ProcessedImages {
   image: File;
   operation: string;
+  originalIndex: number;
 }
 
-const NODES = ["master001", "node001", "node002"];
+const NODES = ["master001", "node001"];
 
 const BasicPage = () => {
   const [imageCount, setImageCount] = useState(1);
@@ -26,6 +27,7 @@ const BasicPage = () => {
 
   const addImageRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
 
   const animateLoaderOut = () => {
     const loader = document.querySelector(".loader-container");
@@ -40,16 +42,11 @@ const BasicPage = () => {
   const [showImage, setShowImage] = useState(Array(imageCount).fill(true));
   const [imageOperations, setImageOperations] = useState<string[]>(Array(imageCount).fill("N/A"));
 
-
   const removeImage = (index: number) => {
     setImagesData((prevImagesData) => prevImagesData.filter((_, idx) => idx !== index));
     setShowImage((prevShowImage) => prevShowImage.map((item, idx) => idx === index ? false : item));
     setImageOperations((prevImageOperations) => prevImageOperations.filter((_, idx) => idx !== index));
   };
-  
-  
-  
-
 
   const addImage = () => {
     setImageCount((prevCount) => prevCount + 1);
@@ -62,10 +59,6 @@ const BasicPage = () => {
     }
   };
 
-  
-
-
-  
   const sanitizeFilename = (filename:string) => {
     return filename.replace(/[^a-zA-Z0-9.-]/g, "");
   };
@@ -73,44 +66,31 @@ const BasicPage = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      NODES.forEach(async (node) => {
-        await axios.delete(
-          `${config.apiUrl}/delete_files_from_nodes/${node}`
-        );
-      });
-
       const formData = new FormData();
       imagesData.forEach(({ image }, index) => {
-        const operation = imageOperations[index]; // Get current operation for this image
+        const operation = imageOperations[index];
         const sanitizedFilename = sanitizeFilename(image.name);
-        // Extract file extension
         const fileExtension = sanitizedFilename.split('.').pop();
-        // Generate unique filename with index
         const indexedFilename = `${sanitizedFilename.split('.')[0]}_${index}.${fileExtension}`;
         const sanitizedFile = new File([image], indexedFilename, { type: image.type });
         formData.append("images", sanitizedFile);
         formData.append("operations", operation);
-      // Print filename and information sent to the server
-      console.log("Sending file to server:", indexedFilename);
-      console.log("Operation:", operation);
+        console.log("Sending file to server:", indexedFilename);
+        console.log("Operation:", operation);
       });
 
-
-
-      config.apiUrl + "upload";
       const response = await axios.post(`${config.apiUrl}/upload`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data", // Set content type to multipart/form-data
+          "Content-Type": "multipart/form-data",
         },
       });
 
       console.log("Response:", response.data);
       const finalImages = response.data.images.map(
         async (imageUrl: string, index: number) => {
-          // Fetch each image
           const url = `${config.apiUrl}/results/${imageUrl}`;
           const imageResponse = await axios.get(url, {
-            responseType: "blob", // Ensure binary response
+            responseType: "blob",
           });
 
           const originalImageName = imageUrl;
@@ -118,7 +98,7 @@ const BasicPage = () => {
             type: "image/png",
           });
 
-          return { image: imageFile, operation: "N/A" };
+          return { image: imageFile, operation: "N/A", originalIndex: index };
         }
       );
 
@@ -128,43 +108,16 @@ const BasicPage = () => {
       const machineLogs = response.data.machine_logs;
       setMachineLogs(machineLogs);
 
-      // processedImages.forEach(async (processedImage) => {
-      //   await axios.delete(
-      //     `http://40.71.40.201/delete/${processedImage.image.name}`
-      //   );
-      // });
-
       setIsLoading(false);
       NODES.forEach(async (node) => {
         await axios.delete(
           `${config.apiUrl}/delete_files_from_nodes/${node}`
         );
       });
-
-      //animateLoaderOut();
-      // setImagesData([]);
-      // setProcessedImages([]);
     } catch (error) {
-      //animateLoaderOut();
       console.error("Error uploading images:", error);
     }
-      // Fetch logs after handleSubmit completes
-      //fetchLogs();
   };
-
-//   const fetchLogs = async () => {
-//   try {
-//     const response = await axios.get(`${config.apiUrl}/logs`);
-//     setMachineLogs(response.data.logs);
-//   } catch (error) {
-//     console.error('Error fetching logs:', error);
-//   }
-// };
-
-// useEffect(() => {
-//   // Fetch logs immediately when the component mounts
-//   fetchLogs();
-// }, []);
 
   const handleImageUpload = (data: ImageData, index: number) => {
     setImagesData((prevImagesData) => {
@@ -186,7 +139,6 @@ const BasicPage = () => {
       return updatedOperations;
     });
   };
-  
 
   return (
     <>
@@ -237,7 +189,7 @@ const BasicPage = () => {
               </div>
             </div>
           </div>
-          <div className='w-3/12'>
+          <div className='w-1/3'>
             <h2 className='text-4xl font-bold'>Logs</h2>
             <div className='bg-white p-4 rounded-lg shadow-lg mt-6'>
               {machineLogs.length > 0 ? (
