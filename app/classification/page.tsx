@@ -14,9 +14,10 @@ interface ImageData {
 interface ProcessedImages {
   image: File;
   operation: string;
+  originalIndex: number;
 }
 
-const NODES = ["master001", "node001", "node002"];
+const NODES = ["master001", "node001"];
 
 const AdvanvedPage = () => {
   const [imageCount, setImageCount] = useState(1);
@@ -44,18 +45,14 @@ const AdvanvedPage = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      NODES.forEach(async (node) => {
-        await axios.delete(
-          `${config.apiUrl}/delete_files_from_nodes/${node}`
-        );
-      });
-
       const formData = new FormData();
-
-      imagesData.forEach(({ image, operation }) => {
-        const sanitizedFilename = sanitizeFilename(image.name);
-        const sanitizedFile = new File([image], sanitizedFilename, { type: image.type });
-        formData.append("images", sanitizedFile);
+      imagesData.forEach(({ image, operation }, index) => {
+      const sanitizedFilename = sanitizeFilename(image.name);
+      const fileExtension = sanitizedFilename.split('.').pop();
+      const indexedFilename = `${sanitizedFilename.split('.')[0]}_${index}.${fileExtension}`;
+      const sanitizedFile = new File([image], indexedFilename, { type: image.type });
+      
+      formData.append("images", sanitizedFile);
         formData.append("operations", operation);
       });
 
@@ -175,7 +172,7 @@ const AdvanvedPage = () => {
               </div>
             </div>
           </div>
-          <div className='w-3/12'>
+          <div className='w-1/3'>
             <h2 className='text-4xl font-bold'>Logs</h2>
             <div className='bg-white p-4 rounded-lg shadow-lg mt-6'>
               {machineLogs.length > 0 ? (
