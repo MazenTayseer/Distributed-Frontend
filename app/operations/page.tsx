@@ -66,6 +66,7 @@ const BasicPage = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
+      setMachineLogs([]);
       const formData = new FormData();
       imagesData.forEach(({ image }, index) => {
         const operation = imageOperations[index];
